@@ -16,7 +16,7 @@ A powerful tool for creating and managing vector embeddings of code repositories
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/your-username/repository-code-embedder.git
+git clone https://github.com/elanrad1/Git-to-RAG.git
 cd repository-code-embedder
 ```
 
