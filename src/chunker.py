@@ -2,17 +2,30 @@ import os
 import json
 import hashlib
 from typing import List, Dict
-from .config import Config
-from .utils import FileTypeDetector, Document
+import sys
+from pathlib import Path
+
+# Add parent directory to path for imports
+sys.path.append(str(Path(__file__).parent.parent))
+
+try:
+    from src.config import Config
+    from src.utils import FileTypeDetector, Document, setup_logger
+except ImportError:
+    from config import Config
+    from utils import FileTypeDetector, Document, setup_logger
+
 import tiktoken
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 class Chunker:
-    def __init__(self, config: Config, model: str = "gpt-3.5-turbo"):
+    def __init__(self, config: Config, model: str = "gpt-3.5-turbo", repo_url: str = None):
+        self.logger = setup_logger('Chunker')
         self.config = config
         self.file_detector = FileTypeDetector()
         self.chunks_dir = config.chunks_dir
         self.cache_metadata_file = config.chunks_metadata_file
+        self.repo_url = repo_url
         
         # Create chunkers
         self.max_tokens = config.chunk_size
@@ -58,71 +71,110 @@ class Chunker:
         with open(self.cache_metadata_file, 'w') as f:
             json.dump(metadata, f)
 
+    def get_repo_specific_chunks_dir(self) -> str:
+        """Get a repository-specific cache directory."""
+        if self.repo_url:
+            repo_hash = hashlib.md5(self.repo_url.encode()).hexdigest()[:8]
+            return os.path.join(self.chunks_dir, repo_hash)
+        return self.chunks_dir
+
     def process_directory(self, directory: str) -> List[Document]:
         """Process all files in a directory and cache the chunks."""
+        if not os.path.exists(directory):
+            self.logger.error(f"Directory does not exist: {directory}")
+            raise ValueError(f"Directory does not exist: {directory}")
+            
+        self.logger.info(f"Processing directory: {directory}")
+        chunks_dir = self.get_repo_specific_chunks_dir()
+        os.makedirs(chunks_dir, exist_ok=True)
+        
         cache_metadata = self.load_cache_metadata()
         documents = []
         files_processed = False
 
+        # Use the target directory as the base for relative paths
+        base_dir = directory
+
+        # Process only files within the target directory
         for root, _, files in os.walk(directory):
+            # Skip if this is a hidden directory or inside .git
+            if any(part.startswith('.') for part in root.split(os.sep)):
+                continue
+                
             for file in files:
+                # Skip hidden files
+                if file.startswith('.'):
+                    continue
+                    
                 file_path = os.path.join(root, file)
                 if self.should_process_file(file_path):
+                    # Create relative path from the target directory
+                    relative_path = os.path.relpath(file_path, base_dir)
+                    
                     current_hash = self.get_file_hash(file_path)
+                    cache_key = f"{self.repo_url}:{relative_path}" if self.repo_url else relative_path
                     cache_path = os.path.join(
-                        self.chunks_dir, 
-                        hashlib.md5(file_path.encode()).hexdigest() + ".json"
+                        chunks_dir,
+                        hashlib.md5(cache_key.encode()).hexdigest() + ".json"
                     )
 
                     if (os.path.exists(cache_path) and 
-                        file_path in cache_metadata and 
-                        cache_metadata[file_path] == current_hash):
+                        cache_key in cache_metadata and 
+                        cache_metadata[cache_key] == current_hash):
+                        self.logger.debug(f"Using cached chunks for: {relative_path}")
                         with open(cache_path, 'r') as f:
                             cached_chunks = json.load(f)
                             documents.extend([Document.from_dict(doc) for doc in cached_chunks])
                     else:
                         try:
-                            chunks = self.process_file(file_path)
+                            self.logger.info(f"Processing file: {relative_path}")
+                            chunks = self.process_file(file_path, relative_path)
                             documents.extend(chunks)
                             
-                            os.makedirs(self.chunks_dir, exist_ok=True)
                             with open(cache_path, 'w') as f:
                                 json.dump([doc.to_dict() for doc in chunks], f)
                             
-                            cache_metadata[file_path] = current_hash
+                            cache_metadata[cache_key] = current_hash
                             files_processed = True
                         except Exception as e:
-                            print(f"Error: {file_path} - {str(e)}")
+                            self.logger.error(f"Error processing {relative_path}: {str(e)}")
 
         if files_processed:
             self.save_cache_metadata(cache_metadata)
 
-        print(f"Success: Processed {len(documents)} documents")
+        self.logger.info(f"Successfully processed {len(documents)} documents from {directory}")
         return documents
 
-    def process_file(self, file_path: str) -> List[Document]:
+    def process_file(self, file_path: str, relative_path: str) -> List[Document]:
         """Process a single file into chunks."""
         try:
             encoding = self.file_detector.get_encoding(file_path)
             with open(file_path, 'r', encoding=encoding) as f:
                 content = f.read()
 
-            splitter = self.code_splitter if self.is_code_file(file_path) else self.text_splitter
+            # Choose appropriate splitter based on file type
+            if self.is_code_file(file_path):
+                splitter = self.code_splitter
+                doc_type = "code"
+            else:
+                splitter = self.text_splitter
+                doc_type = "text"
+
             chunks = splitter.split_text(content)
 
             return [
                 Document(
                     content=chunk,
                     metadata={
-                        "source": file_path,
-                        "type": "code" if self.is_code_file(file_path) else "text",
+                        "source": relative_path,
+                        "type": doc_type,
                         "token_count": self.count_tokens(chunk)
                     }
                 )
                 for chunk in chunks
             ]
         except Exception as e:
-            print(f"Error: {file_path} - {str(e)}")
+            self.logger.error(f"Error processing {relative_path}: {str(e)}")
             return []
 
     def should_process_file(self, file_path: str) -> bool:
@@ -134,6 +186,10 @@ class Chunker:
         """Determine if the file is a code file based on extension."""
         code_extensions = {'.py', '.js', '.java', '.cpp', '.c', '.h', '.cs', '.php', '.rb', '.go'}
         return os.path.splitext(file_path)[1].lower() in code_extensions
+
+    def is_rst_file(self, file_path: str) -> bool:
+        """Determine if the file is an RST file."""
+        return os.path.splitext(file_path)[1].lower() == '.rst'
 
     def cache_chunks(self, documents: List[Document]) -> None:
         """Cache the processed chunks to disk."""

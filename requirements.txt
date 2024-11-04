@@ -7,8 +7,8 @@ tiktoken>=0.5.1
 langchain>=0.1.0
 langchain-openai>=0.0.2
 langchain-community>=0.0.10
-pinecone-client>=3.0.0
 pinecone-client[grpc]>=3.0.0
+protobuf>=4.25.1
 
 # Data processing
 numpy>=1.24.0

@@ -1,18 +1,25 @@
-# Repository To RAG 🚀
+# Code Repository Embedder
 
-A powerful tool for creating and managing vector embeddings of code repositories. This project helps developers create searchable vector databases of their codebase using OpenAI embeddings and Pinecone vector store.
+A tool for creating and managing embeddings of code repositories in Pinecone vector database. This tool helps in processing, chunking, and embedding code repositories for efficient semantic search and analysis.
 
-## Features ✨
+## Features
 
-- 📚 Efficient repository cloning and caching
-- 🔍 Smart text and code chunking with context preservation
-- 🚄 High-performance vector embeddings using OpenAI
-- ⚡ Optimized Pinecone uploads using gRPC
-- 💾 Intelligent caching system for processed files
-- 🔄 Automatic file type detection and encoding
-- 📦 Support for multiple programming languages
+- 🔄 Efficient repository cloning with caching
+- 📝 Smart code chunking with language-specific handling
+- 🔍 Intelligent text encoding detection
+- 📊 Parallel processing of embeddings
+- 🚀 Batch uploading to Pinecone
+- 🎨 Colored logging for better visibility
+- ⚡ Progress tracking with progress bars
 
-## Installation 🛠️
+## Prerequisites
+
+- Python 3.8+
+- Git
+- OpenAI API key
+- Pinecone API key
+
+## Installation
 
 1. Clone this repository:
 ```bash
@@ -38,7 +45,7 @@ PINECONE_API_KEY=your_pinecone_api_key
 PINECONE_REGION=your_pinecone_region
 ```
 
-## Usage 🎯
+## Usage
 
 1. Configure your repository settings in `main.py`:
 ```python
@@ -60,7 +67,7 @@ The tool will:
 - Store vectors in Pinecone
 - Cache results for future runs
 
-## Architecture 🏗️
+## Architecture
 
 - `src/repo_cloner.py`: Handles repository cloning and caching
 - `src/chunker.py`: Processes files into optimized chunks
@@ -68,7 +75,7 @@ The tool will:
 - `src/config.py`: Centralizes configuration management
 - `src/utils.py`: Provides utility functions and helpers
 
-## Performance Optimizations 🔥
+## Performance Optimizations
 
 - Parallel processing for batch uploads using ThreadPoolExecutor
 - gRPC implementation for faster Pinecone operations
@@ -78,7 +85,7 @@ The tool will:
 - Async requests for better throughput
 - Progress bars for monitoring long operations
 
-## Caching System 📦
+## Caching System
 
 The tool implements a sophisticated caching system that:
 - Stores processed chunks in JSON format
@@ -88,7 +95,7 @@ The tool implements a sophisticated caching system that:
 - Only reprocesses modified files
 - Preserves file metadata across runs
 
-## File Processing 📄
+## File Processing
 
 Supports multiple file types with specialized handling:
 ```python
@@ -107,7 +114,7 @@ Features:
 - Token counting using model tokenizer
 - Metadata preservation
 
-## Vector Upload System ⚡
+## Vector Upload System
 
 Implements high-performance vector uploads:
 - Uses Pinecone gRPC client for speed
@@ -117,15 +124,15 @@ Implements high-performance vector uploads:
 - Automatic index creation if needed
 - Configurable batch sizes and workers
 
-## Contributing 🤝
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## License 📝
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgments 🙏
+## Acknowledgments
 
 - OpenAI for embeddings
 - Pinecone for vector storage
