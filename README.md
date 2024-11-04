@@ -23,8 +23,8 @@ A tool for creating and managing embeddings of code repositories in Pinecone vec
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/elanrad1/Git-to-RAG.git
-cd repository-code-embedder
+git clone https://github.com/elanrad1/.git
+cd Git-to-RAG
 ```
 
 2. Create a virtual environment and activate it:
