@@ -5,10 +5,11 @@ from src.pinecone_uploader import PineconeUploader
 
 def main():
     # Repository settings
-    repo_url = "https://github.com/IfcOpenShell/IfcOpenShell.git"
-    target_folder = "src/ifcopenshell-python"  # Optional: specific folder to process
+    repo_url = "https://github.com/username/repository.git"
+    target_folder = "path/to/folder"  # Optional
     model = "gpt-3.5-turbo"  # Model for tokenization
-    index_name = "ifcopenshell-docs-v2"  # Pinecone index name
+    index_name = "your-index-name"
+
 
     # Initialize components
     config = Config.from_env()
