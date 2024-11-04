@@ -2,7 +2,8 @@ import sys
 from pathlib import Path
 
 # Add the project root to the Python path
-sys.path.append(str(Path(__file__).parent))
+project_root = str(Path(__file__).parent.parent)
+sys.path.append(project_root)
 
 from src.config import Config
 from src.repo_cloner import RepoCloner
