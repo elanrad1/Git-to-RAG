@@ -1,4 +1,4 @@
-# Code Repository Embedder
+# Git to RAG
 
 A tool for creating and managing embeddings of code repositories in Pinecone vector database. This tool helps in processing, chunking, and embedding code repositories for efficient semantic search and analysis.
 
